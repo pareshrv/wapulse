@@ -32,25 +32,25 @@ never through any infrastructure you operate.
 | --- | --- | --- | --- | --- |
 | 1.1.1 | Verify macOS/Windows Dev Toolchain | N/A | **Completed** | Verified Go, Wails CLI, and NPM setup. |
 | 1.1.2 | Initialize Wails App Scaffold | wapulse/* | **Completed** | Scaffolded project using Wails vanilla template; dev server verified. |
-| 1.1.3 | Add Core Go Dependencies **[v3: amended]** | go.mod, go.sum | **Needs Revisit** | Drop `go.mau.fi/whatsmeow`. Keep `modernc.org/sqlite`, `github.com/fsnotify/fsnotify`. No new WhatsApp-specific dependency needed — the Cloud API is called via Go's standard `net/http`. |
+| 1.1.3 | Add Core Go Dependencies **[v3: amended]** | go.mod, go.sum | **Completed** | Drop `go.mau.fi/whatsmeow`. Keep `modernc.org/sqlite`, `github.com/fsnotify/fsnotify`. No new WhatsApp-specific dependency needed — the Cloud API is called via Go's standard `net/http`. |
 
 ## Phase 2: Database Layer & Data Access Objects (DAO)
 
 | Task ID | Task Name | Target Files | Status | Description & Acceptance Criteria |
 | --- | --- | --- | --- | --- |
-| 2.1.1 | Create DB Init Service | internal/db/db.go | **Needs Revisit** | WAL, foreign keys, `PRAGMA busy_timeout=5000`, `SetMaxOpenConns(1)` on the write connection. (Unchanged from v2.) |
-| 2.1.2 | Core Schema Migration Pipeline **[v3: amended]** | internal/db/migration.go | **Needs Revisit** | Add `processed_files` and the **revised** `message_templates` table (Meta approval lifecycle — see Design Doc v3 §6), plus the revised `message_outbox` columns (`template_name`, `template_vars_json`, `AWAITING_TEMPLATE` status). |
+| 2.1.1 | Create DB Init Service | internal/db/db.go | **Completed** | WAL, foreign keys, `PRAGMA busy_timeout=5000`, `SetMaxOpenConns(1)` on the write connection. (Unchanged from v2.) |
+| 2.1.2 | Core Schema Migration Pipeline **[v3: amended]** | internal/db/migration.go | **Completed** | Add `processed_files` and the **revised** `message_templates` table (Meta approval lifecycle — see Design Doc v3 §6), plus the revised `message_outbox` columns (`template_name`, `template_vars_json`, `AWAITING_TEMPLATE` status). |
 | 2.1.3 | Outbox Queue DAO | internal/db/outbox_dao.go | **Completed** | EnqueueAction, FetchPendingActions, MarkActionSent, MarkActionFailedWithBackoff, with tests. |
 | 2.1.4 | Scheduled Rules DAO | internal/db/schedule_dao.go | **Completed** | CreateScheduledRule, FetchDueRules, UpdateRuleStatus, with tests. |
-| 2.1.5 | Config & Watermark DAO **[v3: amended]** | internal/db/config_dao.go | **Needs Revisit** | Key-value config getters/setters, now also storing **encrypted** per-client `waba_id`, `phone_number_id`, and access token (see 7.1.6). |
-| 2.1.6 | Processed-Files & Template DAO | internal/db/ingestion_dao.go, internal/db/template_dao.go | **Pending** | `HasProcessedHash`, `MarkProcessed` (transactional with outbox insert + watermark update); `GetTemplate`, `UpsertTemplate`, `UpdateApprovalStatus`. |
+| 2.1.5 | Config & Watermark DAO **[v3: amended]** | internal/db/config_dao.go | **Completed** | Key-value config getters/setters, now also storing **encrypted** per-client `waba_id`, `phone_number_id`, and access token (see 7.1.6). |
+| 2.1.6 | Processed-Files & Template DAO | internal/db/ingestion_dao.go, internal/db/template_dao.go | **Completed** | `HasProcessedHash`, `MarkProcessed` (transactional with outbox insert + watermark update); `GetTemplate`, `UpsertTemplate`, `UpdateApprovalStatus`. |
 
 ## Phase 3: Domain Plugin Contract & Client Driver Adapters
 
 | Task ID | Task Name | Target Files | Status | Description & Acceptance Criteria |
 | --- | --- | --- | --- | --- |
-| 3.1.1 | Define Core Plugin Interface | internal/plugin/plugin.go | **Pending** | `ExtractedEvent` struct and `DomainPlugin` interface — structured data only, no message text. Unchanged from v2. |
-| 3.1.2 | Wholesaler Plugin Driver | internal/plugin/wholesaler.go | **Pending** | Parses bills.pdf, extracts customer phone/balance, returns `ExtractedEvent` with attachment path. |
+| 3.1.1 | Define Core Plugin Interface | internal/plugin/plugin.go | **Completed** | `ExtractedEvent` struct and `DomainPlugin` interface — structured data only, no message text. Unchanged from v2. |
+| 3.1.2 | Wholesaler Plugin Driver | internal/plugin/wholesaler.go | **Completed** | Parses bills.pdf, extracts customer phone/balance, returns `ExtractedEvent` with attachment path. |
 | 3.1.3 | Doctor Plugin Driver | internal/plugin/doctor.go | **Pending** | Parses patient notes, extracts medicine summary and next-visit interval, returns immediate + scheduled `ExtractedEvent`s. |
 | 3.1.4 | Plugin Registry & Build Tags | internal/plugin/registry.go | **Pending** | Wire active driver via Go build tags (`-tags doctor` vs `-tags footwear`). |
 | 3.2.1 | Template Rendering Engine **[v3: revised]** | internal/template/renderer.go | **Pending** | Given an `ExtractedEvent`, look up the `APPROVED` template for its event type, map `Data` fields to the template's `{{1}}, {{2}}, ...` variables per `variable_order`. If no approved template exists, mark the outbox row `AWAITING_TEMPLATE` instead of sending. |
